@@ -173,9 +173,13 @@ def export_data():
 
 # Veritabanı tablolarını oluştur ve admin kullanıcısını ekle (Render'da otomatik çalışır)
 # Uygulama başlatıldığında tablolar oluşturulur
-with app.app_context():
+def init_database():
+    """Veritabanını başlat ve admin kullanıcısını oluştur"""
     try:
+        print("Veritabanı bağlantısı kontrol ediliyor...")
         db.create_all()
+        print("Veritabanı tabloları oluşturuldu.")
+        
         # Admin kullanıcısı yoksa oluştur
         if not User.query.filter_by(username='admin').first():
             admin = User(
@@ -188,9 +192,17 @@ with app.app_context():
             admin.set_password('admin123')
             db.session.add(admin)
             db.session.commit()
-            print("Admin kullanıcısı oluşturuldu: admin / admin123")
+            print("✅ Admin kullanıcısı oluşturuldu: admin / admin123")
+        else:
+            print("ℹ️ Admin kullanıcısı zaten mevcut.")
     except Exception as e:
-        print(f"Veritabanı başlatma hatası (normal olabilir): {e}")
+        print(f"❌ Veritabanı başlatma hatası: {type(e).__name__}: {str(e)}")
+        import traceback
+        print(traceback.format_exc())
+
+# Uygulama başlatıldığında veritabanını başlat
+with app.app_context():
+    init_database()
 
 if __name__ == '__main__':
     app.run(debug=True)

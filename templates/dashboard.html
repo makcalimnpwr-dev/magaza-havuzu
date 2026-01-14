@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Genel Bakış</h1>
+    <p class="mt-1 text-sm text-slate-500">Mağaza havuzunuzun güncel durumunu ve veri işlemlerini buradan yönetebilirsiniz.</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+        <div class="flex items-center">
+            <div class="flex-shrink-0 p-3 bg-indigo-100 rounded-xl">
+                <svg class="h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+            </div>
+            <div class="ml-5 w-0 flex-1">
+                <dl>
+                    <dt class="text-sm font-medium text-slate-500 truncate">Toplam Mağaza</dt>
+                    <dd>
+                        <div class="text-3xl font-bold text-slate-900">{{ stores|length }}</div>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="lg:col-span-3 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="flex items-start gap-4">
+             <div class="flex-shrink-0 p-3 bg-green-100 rounded-xl">
+                <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-slate-900">Veri Merkezi</h3>
+                <p class="text-sm text-slate-500 mt-1">Excel şablonu ile toplu veri yükleyin veya mevcut listeyi indirin.</p>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-3">
+            <a href="{{ url_for('download_template') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-xl hover:bg-indigo-100 transition-colors">
+                Şablon İndir
+            </a>
+            {% if current_user.can_add or current_user.is_admin %}
+            <form action="{{ url_for('upload_excel') }}" method="POST" enctype="multipart/form-data" class="flex items-center">
+                <label class="cursor-pointer flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl transition-colors shadow-sm hover:shadow">
+                    <span>Excel Yükle</span>
+                    <input type="file" name="file" class="hidden" onchange="this.form.submit()" accept=".xlsx">
+                </label>
+            </form>
+            {% endif %}
+             <a href="{{ url_for('export_data', **request.args) }}" class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors">
+                Excel Dışa Aktar
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+    <div class="p-6 bg-slate-50 border-b border-slate-200">
+        <div class="flex items-center mb-4">
+            <svg class="h-5 w-5 text-slate-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            <h2 class="text-lg font-bold text-slate-800">Detaylı Arama Filtresi</h2>
+        </div>
+        
+        <form method="GET">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Müşteri Kodu</label>
+                    <input type="text" name="musteri_kodu" value="{{ request.args.get('musteri_kodu', '') }}" placeholder="Kod girin..." class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Mağaza İsmi</label>
+                    <input type="text" name="magaza_ismi" value="{{ request.args.get('magaza_ismi', '') }}" placeholder="İsim ara..." class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Cari</label>
+                    <input type="text" name="cari" value="{{ request.args.get('cari', '') }}" placeholder="Cari..." class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">İlçe</label>
+                    <input type="text" name="ilce" value="{{ request.args.get('ilce', '') }}" placeholder="İlçe..." class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Şehir (İl)</label>
+                    <select name="il" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="">Tümü</option>
+                        {% for item in cities %}{% if item[0] %}
+                        <option value="{{ item[0] }}" {% if request.args.get('il') == item[0] %}selected{% endif %}>{{ item[0] }}</option>
+                        {% endif %}{% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Bölge</label>
+                    <select name="bolge" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="">Tümü</option>
+                        {% for item in regions %}{% if item[0] %}
+                        <option value="{{ item[0] }}" {% if request.args.get('bolge') == item[0] %}selected{% endif %}>{{ item[0] }}</option>
+                        {% endif %}{% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Kategori</label>
+                    <select name="kategori" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="">Tümü</option>
+                        {% for item in categories %}{% if item[0] %}
+                        <option value="{{ item[0] }}" {% if request.args.get('kategori') == item[0] %}selected{% endif %}>{{ item[0] }}</option>
+                        {% endif %}{% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Mağaza Sınıfı</label>
+                    <select name="sinif" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="">Tümü</option>
+                        {% for item in classes %}{% if item[0] %}
+                        <option value="{{ item[0] }}" {% if request.args.get('sinif') == item[0] %}selected{% endif %}>{{ item[0] }}</option>
+                        {% endif %}{% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 mt-4 pt-4 border-t border-slate-200">
+                <a href="{{ url_for('dashboard') }}" class="px-6 py-2 text-slate-600 bg-white border border-slate-300 rounded-lg text-sm font-bold hover:bg-slate-50 transition-colors">
+                    Filtreleri Temizle
+                </a>
+                <button type="submit" class="px-8 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700 transition-colors shadow-sm flex items-center gap-2">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    Sonuçları Getir
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-slate-600">
+            <thead class="text-xs text-slate-500 font-bold uppercase bg-slate-50 border-b border-slate-200 tracking-wider">
+                <tr>
+                    <th class="px-6 py-4">Müşteri Kodu</th>
+                    <th class="px-6 py-4">Mağaza İsmi</th>
+                    <th class="px-6 py-4">Sınıf & Kategori</th>
+                    <th class="px-6 py-4">Bölge & Şehir</th>
+                    <th class="px-6 py-4">Cari</th>
+                    <th class="px-6 py-4 text-right">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for store in stores %}
+                <tr class="bg-white hover:bg-indigo-50/50 transition-colors">
+                    <td class="px-6 py-4 font-medium text-slate-900">
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono text-xs bg-slate-100 px-2 py-1 rounded">{{ store.musteri_kodu }}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm font-bold text-slate-900">{{ store.magaza_ismi }}</div>
+                        <div class="text-xs text-slate-500 mt-0.5">{{ store.adres|truncate(40) }}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-col gap-1">
+                            <span class="inline-flex w-fit items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                                {{ store.magaza_sinifi }}
+                            </span>
+                            <span class="inline-flex w-fit items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
+                                {{ store.magaza_kategorisi }}
+                            </span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-slate-700">{{ store.bolge }}</span>
+                            <span class="text-xs text-slate-500">{{ store.il }} / {{ store.ilce }}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 font-mono text-slate-700">{{ store.cari }}</td>
+                    <td class="px-6 py-4 text-right">
+                         {% if current_user.is_admin or current_user.can_edit %}
+                        <button class="text-indigo-600 hover:text-indigo-900 font-bold text-xs uppercase tracking-wide">
+                            Düzenle
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="px-6 py-12 text-center">
+                        <div class="flex flex-col items-center justify-center">
+                            <p class="text-lg font-medium text-slate-500">Kayıt Bulunamadı</p>
+                            <p class="text-sm text-slate-400 mt-1">Filtre kriterlerinizi kontrol ediniz.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="bg-slate-50 px-6 py-3 border-t border-slate-200 text-xs text-slate-500 flex justify-between">
+        <span>Toplam {{ stores|length }} kayıt listeleniyor.</span>
+    </div>
+</div>
+{% endblock %}

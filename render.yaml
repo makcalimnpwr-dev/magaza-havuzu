@@ -1,6 +1,6 @@
 services:
   # PostgreSQL Database
-  - type: pspg
+  - type: postgresql
     name: magaza-veritabani
     databaseName: magazalar
     user: magaza_user

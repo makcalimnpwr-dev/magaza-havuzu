@@ -38,21 +38,37 @@ def apply_filters(query):
 
     # Filtreleri uygula (çoklu seçim desteği ile)
     if f_kod_list:
-        query = query.filter(or_(*[Store.musteri_kodu.ilike(f"%{k}%") for k in f_kod_list if k]))
+        kod_filtered = [k for k in f_kod_list if k]
+        if kod_filtered:
+            query = query.filter(or_(*[Store.musteri_kodu.ilike(f"%{k}%") for k in kod_filtered]))
     if f_isim_list:
-        query = query.filter(or_(*[Store.magaza_ismi.ilike(f"%{i}%") for i in f_isim_list if i]))
+        isim_filtered = [i for i in f_isim_list if i]
+        if isim_filtered:
+            query = query.filter(or_(*[Store.magaza_ismi.ilike(f"%{i}%") for i in isim_filtered]))
     if f_cari_list:
-        query = query.filter(or_(*[Store.cari.ilike(f"%{c}%") for c in f_cari_list if c]))
+        cari_filtered = [c for c in f_cari_list if c]
+        if cari_filtered:
+            query = query.filter(or_(*[Store.cari.ilike(f"%{c}%") for c in cari_filtered]))
     if f_ilce_list:
-        query = query.filter(or_(*[Store.ilce.ilike(f"%{ilce}%") for ilce in f_ilce_list if ilce]))
+        ilce_filtered = [ilce for ilce in f_ilce_list if ilce]
+        if ilce_filtered:
+            query = query.filter(or_(*[Store.ilce.ilike(f"%{ilce}%") for ilce in ilce_filtered]))
     if f_il_list:
-        query = query.filter(Store.il.in_([il for il in f_il_list if il]))
+        il_filtered = [il for il in f_il_list if il]
+        if il_filtered:
+            query = query.filter(Store.il.in_(il_filtered))
     if f_bolge_list:
-        query = query.filter(Store.bolge.in_([b for b in f_bolge_list if b]))
+        bolge_filtered = [b for b in f_bolge_list if b]
+        if bolge_filtered:
+            query = query.filter(Store.bolge.in_(bolge_filtered))
     if f_kategori_list:
-        query = query.filter(Store.magaza_kategorisi.in_([k for k in f_kategori_list if k]))
+        kategori_filtered = [k for k in f_kategori_list if k]
+        if kategori_filtered:
+            query = query.filter(Store.magaza_kategorisi.in_(kategori_filtered))
     if f_sinif_list:
-        query = query.filter(Store.magaza_sinifi.in_([s for s in f_sinif_list if s]))
+        sinif_filtered = [s for s in f_sinif_list if s]
+        if sinif_filtered:
+            query = query.filter(Store.magaza_sinifi.in_(sinif_filtered))
         
     return query
 

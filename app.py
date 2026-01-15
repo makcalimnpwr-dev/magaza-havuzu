@@ -40,35 +40,59 @@ def apply_filters(query):
     if f_kod_list:
         kod_filtered = [k for k in f_kod_list if k]
         if kod_filtered:
-            query = query.filter(or_(*[Store.musteri_kodu.ilike(f"%{k}%") for k in kod_filtered]))
+            if len(kod_filtered) == 1:
+                query = query.filter(Store.musteri_kodu.ilike(f"%{kod_filtered[0]}%"))
+            else:
+                query = query.filter(or_(*[Store.musteri_kodu.ilike(f"%{k}%") for k in kod_filtered]))
     if f_isim_list:
         isim_filtered = [i for i in f_isim_list if i]
         if isim_filtered:
-            query = query.filter(or_(*[Store.magaza_ismi.ilike(f"%{i}%") for i in isim_filtered]))
+            if len(isim_filtered) == 1:
+                query = query.filter(Store.magaza_ismi.ilike(f"%{isim_filtered[0]}%"))
+            else:
+                query = query.filter(or_(*[Store.magaza_ismi.ilike(f"%{i}%") for i in isim_filtered]))
     if f_cari_list:
         cari_filtered = [c for c in f_cari_list if c]
         if cari_filtered:
-            query = query.filter(or_(*[Store.cari.ilike(f"%{c}%") for c in cari_filtered]))
+            if len(cari_filtered) == 1:
+                query = query.filter(Store.cari.ilike(f"%{cari_filtered[0]}%"))
+            else:
+                query = query.filter(or_(*[Store.cari.ilike(f"%{c}%") for c in cari_filtered]))
     if f_ilce_list:
         ilce_filtered = [ilce for ilce in f_ilce_list if ilce]
         if ilce_filtered:
-            query = query.filter(or_(*[Store.ilce.ilike(f"%{ilce}%") for ilce in ilce_filtered]))
+            if len(ilce_filtered) == 1:
+                query = query.filter(Store.ilce.ilike(f"%{ilce_filtered[0]}%"))
+            else:
+                query = query.filter(or_(*[Store.ilce.ilike(f"%{ilce}%") for ilce in ilce_filtered]))
     if f_il_list:
         il_filtered = [il for il in f_il_list if il]
         if il_filtered:
-            query = query.filter(Store.il.in_(il_filtered))
+            if len(il_filtered) == 1:
+                query = query.filter(Store.il == il_filtered[0])
+            else:
+                query = query.filter(Store.il.in_(il_filtered))
     if f_bolge_list:
         bolge_filtered = [b for b in f_bolge_list if b]
         if bolge_filtered:
-            query = query.filter(Store.bolge.in_(bolge_filtered))
+            if len(bolge_filtered) == 1:
+                query = query.filter(Store.bolge == bolge_filtered[0])
+            else:
+                query = query.filter(Store.bolge.in_(bolge_filtered))
     if f_kategori_list:
         kategori_filtered = [k for k in f_kategori_list if k]
         if kategori_filtered:
-            query = query.filter(Store.magaza_kategorisi.in_(kategori_filtered))
+            if len(kategori_filtered) == 1:
+                query = query.filter(Store.magaza_kategorisi == kategori_filtered[0])
+            else:
+                query = query.filter(Store.magaza_kategorisi.in_(kategori_filtered))
     if f_sinif_list:
         sinif_filtered = [s for s in f_sinif_list if s]
         if sinif_filtered:
-            query = query.filter(Store.magaza_sinifi.in_(sinif_filtered))
+            if len(sinif_filtered) == 1:
+                query = query.filter(Store.magaza_sinifi == sinif_filtered[0])
+            else:
+                query = query.filter(Store.magaza_sinifi.in_(sinif_filtered))
         
     return query
 

@@ -34,3 +34,23 @@ class Store(db.Model):
     enlem = db.Column(db.Float)
     boylam = db.Column(db.Float)
     adres = db.Column(db.Text)
+    # Dinamik sütunlar için JSON alanı
+    custom_fields = db.Column(db.JSON, default=dict)
+
+class CustomColumn(db.Model):
+    """Dinamik olarak eklenen sütunlar"""
+    id = db.Column(db.Integer, primary_key=True)
+    column_name = db.Column(db.String(100), nullable=False, unique=True)
+    column_label = db.Column(db.String(150), nullable=False)
+    column_type = db.Column(db.String(50), default='text')  # text, number, date
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=db.func.now())
+
+class AllowedValue(db.Model):
+    """İzin verilen değerler (İl, İlçe, Cari, Bölge, Mağaza Sınıfı, Kategori)"""
+    id = db.Column(db.Integer, primary_key=True)
+    field_name = db.Column(db.String(50), nullable=False)  # il, ilce, cari, bolge, magaza_sinifi, magaza_kategorisi
+    value = db.Column(db.String(200), nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.now())
+    
+    __table_args__ = (db.UniqueConstraint('field_name', 'value', name='unique_field_value'),)

@@ -1,9 +1,9 @@
 import os
 import pandas as pd
 from io import BytesIO
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, jsonify
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-from models import db, User, Store
+from models import db, User, Store, CustomColumn, AllowedValue
 from sqlalchemy import or_
 
 app = Flask(__name__)
@@ -251,17 +251,217 @@ def init_database():
             admin.set_password('admin123')
             db.session.add(admin)
             db.session.commit()
-            print("✅ Admin kullanıcısı oluşturuldu: admin / admin123")
+            print("[OK] Admin kullanıcısı oluşturuldu: admin / admin123")
         else:
-            print("ℹ️ Admin kullanıcısı zaten mevcut.")
+            print("[INFO] Admin kullanıcısı zaten mevcut.")
     except Exception as e:
-        print(f"❌ Veritabanı başlatma hatası: {type(e).__name__}: {str(e)}")
+        print(f"[ERROR] Veritabani baslatma hatasi: {type(e).__name__}: {str(e)}")
         import traceback
         print(traceback.format_exc())
 
 # Uygulama başlatıldığında veritabanını başlat
 with app.app_context():
     init_database()
+
+# --- MAĞAZA DÜZENLEME ROUTE'LARI ---
+
+@app.route('/store/<int:store_id>')
+@login_required
+def get_store(store_id):
+    """Mağaza bilgilerini getir (AJAX için)"""
+    store = Store.query.get_or_404(store_id)
+    return jsonify({
+        'id': store.id,
+        'musteri_kodu': store.musteri_kodu,
+        'magaza_ismi': store.magaza_ismi,
+        'magaza_kategorisi': store.magaza_kategorisi,
+        'magaza_sinifi': store.magaza_sinifi,
+        'cari': store.cari,
+        'il': store.il,
+        'ilce': store.ilce,
+        'bolge': store.bolge,
+        'enlem': store.enlem,
+        'boylam': store.boylam,
+        'adres': store.adres,
+        'custom_fields': store.custom_fields or {}
+    })
+
+@app.route('/store/update', methods=['POST'])
+@login_required
+def update_store():
+    """ID bazlı mağaza güncelleme (sadece belirtilen sütunlar)"""
+    if not current_user.can_edit and not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Yetkiniz yok.'}), 403
+    
+    data = request.get_json()
+    store_id = data.get('id')
+    
+    if not store_id:
+        return jsonify({'success': False, 'message': 'ID gerekli.'}), 400
+    
+    store = Store.query.get(store_id)
+    if not store:
+        return jsonify({'success': False, 'message': 'Mağaza bulunamadı.'}), 404
+    
+    # Sadece gönderilen alanları güncelle
+    update_fields = {
+        'musteri_kodu': 'musteri_kodu',
+        'magaza_ismi': 'magaza_ismi',
+        'magaza_kategorisi': 'magaza_kategorisi',
+        'magaza_sinifi': 'magaza_sinifi',
+        'cari': 'cari',
+        'il': 'il',
+        'ilce': 'ilce',
+        'bolge': 'bolge',
+        'enlem': 'enlem',
+        'boylam': 'boylam',
+        'adres': 'adres'
+    }
+    
+    for key, field in update_fields.items():
+        if key in data:
+            setattr(store, field, data[key])
+    
+    # Dinamik sütunlar
+    if 'custom_fields' in data:
+        store.custom_fields = data['custom_fields']
+    
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Mağaza başarıyla güncellendi.'})
+
+# --- KULLANICI YÖNETİMİ ROUTE'LARI ---
+
+@app.route('/users')
+@login_required
+def users():
+    """Kullanıcı yönetimi sayfası"""
+    if not current_user.is_admin:
+        flash('Bu sayfaya erişim yetkiniz yok.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Sadece admin tüm kullanıcıları görebilir
+    users_list = User.query.all()
+    
+    return render_template('users.html', users=users_list)
+
+@app.route('/users/create', methods=['POST'])
+@login_required
+def create_user():
+    """Yeni kullanıcı oluştur"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Yetkiniz yok.'}), 403
+    
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    
+    if User.query.filter_by(username=username).first():
+        return jsonify({'success': False, 'message': 'Bu kullanıcı adı zaten kullanılıyor.'}), 400
+    
+    user = User(
+        username=username,
+        is_admin=data.get('is_admin', False),
+        can_add=data.get('can_add', False),
+        can_edit=data.get('can_edit', False),
+        can_delete=data.get('can_delete', False)
+    )
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Kullanıcı oluşturuldu.'})
+
+@app.route('/users/<int:user_id>/update', methods=['POST'])
+@login_required
+def update_user(user_id):
+    """Kullanıcı güncelle"""
+    if not current_user.is_admin:
+        # Admin değilse sadece kendi bilgilerini güncelleyebilir
+        if user_id != current_user.id:
+            return jsonify({'success': False, 'message': 'Yetkiniz yok.'}), 403
+    
+    user = User.query.get_or_404(user_id)
+    data = request.get_json()
+    
+    if 'username' in data:
+        if User.query.filter(User.username == data['username'], User.id != user_id).first():
+            return jsonify({'success': False, 'message': 'Bu kullanıcı adı zaten kullanılıyor.'}), 400
+        user.username = data['username']
+    
+    if 'password' in data and data['password']:
+        user.set_password(data['password'])
+    
+    if current_user.is_admin:
+        if 'is_admin' in data:
+            user.is_admin = data['is_admin']
+        if 'can_add' in data:
+            user.can_add = data['can_add']
+        if 'can_edit' in data:
+            user.can_edit = data['can_edit']
+        if 'can_delete' in data:
+            user.can_delete = data['can_delete']
+    
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Kullanıcı güncellendi.'})
+
+# --- AYARLAR ROUTE'LARI ---
+
+@app.route('/settings')
+@login_required
+def settings():
+    """Ayarlar sayfası"""
+    if not current_user.is_admin:
+        flash('Bu sayfaya erişim yetkiniz yok.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    custom_columns = CustomColumn.query.filter_by(is_active=True).all()
+    allowed_values = {}
+    for field in ['il', 'ilce', 'cari', 'bolge', 'magaza_sinifi', 'magaza_kategorisi']:
+        allowed_values[field] = [av.value for av in AllowedValue.query.filter_by(field_name=field).all()]
+    
+    return render_template('settings.html', custom_columns=custom_columns, allowed_values=allowed_values)
+
+@app.route('/settings/column/add', methods=['POST'])
+@login_required
+def add_custom_column():
+    """Dinamik sütun ekle"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Yetkiniz yok.'}), 403
+    
+    data = request.get_json()
+    column = CustomColumn(
+        column_name=data['column_name'],
+        column_label=data['column_label'],
+        column_type=data.get('column_type', 'text')
+    )
+    db.session.add(column)
+    db.session.commit()
+    
+    return jsonify({'success': True, 'message': 'Sütun eklendi.', 'column': {'id': column.id, 'column_name': column.column_name, 'column_label': column.column_label}})
+
+@app.route('/settings/allowed-value/add', methods=['POST'])
+@login_required
+def add_allowed_value():
+    """İzin verilen değer ekle"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Yetkiniz yok.'}), 403
+    
+    data = request.get_json()
+    field_name = data['field_name']
+    values = data.get('values', [])
+    
+    if isinstance(values, str):
+        values = [v.strip() for v in values.split('\n') if v.strip()]
+    
+    added = []
+    for value in values:
+        if not AllowedValue.query.filter_by(field_name=field_name, value=value).first():
+            av = AllowedValue(field_name=field_name, value=value)
+            db.session.add(av)
+            added.append(value)
+    
+    db.session.commit()
+    return jsonify({'success': True, 'message': f'{len(added)} değer eklendi.', 'added': added})
 
 if __name__ == '__main__':
     app.run(debug=True)

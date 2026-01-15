@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Kullanıcı Yönetimi</h1>
+    <p class="mt-1 text-sm text-slate-500">Sistem kullanıcılarını yönetebilirsiniz.</p>
+</div>
+
+<div class="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+    <div class="p-6 border-b border-slate-200 flex justify-between items-center">
+        <h2 class="text-lg font-bold text-slate-800">Kullanıcılar</h2>
+        <button onclick="openCreateUserModal()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700">
+            + Yeni Kullanıcı
+        </button>
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm text-left text-slate-600">
+            <thead class="text-xs text-slate-500 font-bold uppercase bg-slate-50 border-b border-slate-200">
+                <tr>
+                    <th class="px-6 py-4">Kullanıcı Adı</th>
+                    <th class="px-6 py-4">Yetkiler</th>
+                    <th class="px-6 py-4 text-right">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for user in users %}
+                <tr class="bg-white hover:bg-indigo-50/50">
+                    <td class="px-6 py-4">
+                        <div class="font-medium text-slate-900">{{ user.username }}</div>
+                        {% if user.is_admin %}
+                        <span class="text-xs text-indigo-600 font-bold">ADMIN</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex flex-wrap gap-2">
+                            {% if user.can_add %}<span class="px-2 py-1 text-xs bg-green-100 text-green-700 rounded">Ekle</span>{% endif %}
+                            {% if user.can_edit %}<span class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">Düzenle</span>{% endif %}
+                            {% if user.can_delete %}<span class="px-2 py-1 text-xs bg-red-100 text-red-700 rounded">Sil</span>{% endif %}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <button onclick="openEditUserModal({{ user.id }}, '{{ user.username }}', {{ user.is_admin|lower }}, {{ user.can_add|lower }}, {{ user.can_edit|lower }}, {{ user.can_delete|lower }})" class="text-indigo-600 hover:text-indigo-900 font-bold text-xs">
+                            Düzenle
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Yeni Kullanıcı Modal -->
+<div id="createUserModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full">
+        <div class="p-6 border-b border-slate-200">
+            <h3 class="text-lg font-bold text-slate-900">Yeni Kullanıcı</h3>
+        </div>
+        <form id="createUserForm" class="p-6 space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Kullanıcı Adı</label>
+                <input type="text" name="username" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Şifre</label>
+                <input type="password" name="password" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+            </div>
+            <div class="space-y-2">
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" name="is_admin" class="rounded">
+                    <span class="text-sm text-slate-700">Yönetici</span>
+                </label>
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" name="can_add" class="rounded">
+                    <span class="text-sm text-slate-700">Ekleme Yetkisi</span>
+                </label>
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" name="can_edit" class="rounded">
+                    <span class="text-sm text-slate-700">Düzenleme Yetkisi</span>
+                </label>
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" name="can_delete" class="rounded">
+                    <span class="text-sm text-slate-700">Silme Yetkisi</span>
+                </label>
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" onclick="closeCreateUserModal()" class="px-4 py-2 text-slate-600 bg-slate-100 rounded-lg text-sm">İptal</button>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold">Oluştur</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Düzenle Kullanıcı Modal -->
+<div id="editUserModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-md w-full">
+        <div class="p-6 border-b border-slate-200">
+            <h3 class="text-lg font-bold text-slate-900">Kullanıcı Düzenle</h3>
+        </div>
+        <form id="editUserForm" class="p-6 space-y-4">
+            <input type="hidden" id="editUserId" name="user_id">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Kullanıcı Adı</label>
+                <input type="text" id="editUsername" name="username" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1">Yeni Şifre (Değiştirmek istemiyorsanız boş bırakın)</label>
+                <input type="password" id="editPassword" name="password" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+            </div>
+            <div class="space-y-2">
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" id="editIsAdmin" name="is_admin" class="rounded">
+                    <span class="text-sm text-slate-700">Yönetici</span>
+                </label>
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" id="editCanAdd" name="can_add" class="rounded">
+                    <span class="text-sm text-slate-700">Ekleme Yetkisi</span>
+                </label>
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" id="editCanEdit" name="can_edit" class="rounded">
+                    <span class="text-sm text-slate-700">Düzenleme Yetkisi</span>
+                </label>
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" id="editCanDelete" name="can_delete" class="rounded">
+                    <span class="text-sm text-slate-700">Silme Yetkisi</span>
+                </label>
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button type="button" onclick="closeEditUserModal()" class="px-4 py-2 text-slate-600 bg-slate-100 rounded-lg text-sm">İptal</button>
+                <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold">Kaydet</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openCreateUserModal() {
+    document.getElementById('createUserModal').classList.remove('hidden');
+}
+
+function closeCreateUserModal() {
+    document.getElementById('createUserModal').classList.add('hidden');
+    document.getElementById('createUserForm').reset();
+}
+
+function openEditUserModal(id, username, isAdmin, canAdd, canEdit, canDelete) {
+    document.getElementById('editUserId').value = id;
+    document.getElementById('editUsername').value = username;
+    document.getElementById('editIsAdmin').checked = isAdmin;
+    document.getElementById('editCanAdd').checked = canAdd;
+    document.getElementById('editCanEdit').checked = canEdit;
+    document.getElementById('editCanDelete').checked = canDelete;
+    document.getElementById('editUserModal').classList.remove('hidden');
+}
+
+function closeEditUserModal() {
+    document.getElementById('editUserModal').classList.add('hidden');
+    document.getElementById('editUserForm').reset();
+}
+
+document.getElementById('createUserForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    showProgress();
+    const formData = new FormData(this);
+    const data = {
+        username: formData.get('username'),
+        password: formData.get('password'),
+        is_admin: formData.get('is_admin') === 'on',
+        can_add: formData.get('can_add') === 'on',
+        can_edit: formData.get('can_edit') === 'on',
+        can_delete: formData.get('can_delete') === 'on'
+    };
+    
+    fetch('/users/create', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(r => r.json())
+    .then(result => {
+        hideProgress();
+        if (result.success) {
+            alert('Kullanıcı oluşturuldu.');
+            location.reload();
+        } else {
+            alert('Hata: ' + result.message);
+        }
+    });
+});
+
+document.getElementById('editUserForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    showProgress();
+    const formData = new FormData(this);
+    const data = {
+        username: formData.get('username'),
+        is_admin: formData.get('is_admin') === 'on',
+        can_add: formData.get('can_add') === 'on',
+        can_edit: formData.get('can_edit') === 'on',
+        can_delete: formData.get('can_delete') === 'on'
+    };
+    if (formData.get('password')) {
+        data.password = formData.get('password');
+    }
+    
+    fetch(`/users/${formData.get('user_id')}/update`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    })
+    .then(r => r.json())
+    .then(result => {
+        hideProgress();
+        if (result.success) {
+            alert('Kullanıcı güncellendi.');
+            location.reload();
+        } else {
+            alert('Hata: ' + result.message);
+        }
+    });
+});
+</script>
+{% endblock %}
+

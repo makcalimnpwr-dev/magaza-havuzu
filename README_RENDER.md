@@ -107,3 +107,4 @@ Render Dashboard'dan PostgreSQL database'inize gidip "Backups" sekmesinden yedek
 - `requirements.txt`'de `gunicorn` olduğundan emin olun
 - Start command'in `gunicorn app:app` olduğunu kontrol edin
 
+

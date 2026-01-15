@@ -49,9 +49,9 @@
                 </label>
             </form>
             {% endif %}
-             <a href="{{ url_for('export_data', **request.args) }}" class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors">
+            <button onclick="exportExcel()" class="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors">
                 Excel Dışa Aktar
-            </a>
+            </button>
         </div>
     </div>
 </div>
@@ -65,59 +65,71 @@
             <h2 class="text-lg font-bold text-slate-800">Detaylı Arama Filtresi</h2>
         </div>
         
-        <form method="GET">
+        <form method="GET" id="filterForm">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Müşteri Kodu</label>
-                    <input type="text" name="musteri_kodu" value="{{ request.args.get('musteri_kodu', '') }}" placeholder="Kod girin..." class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <select name="musteri_kodu" multiple placeholder="Kod seçin veya yazın..." class="filter-select">
+                        {% for kod in musteri_kodlari %}
+                        <option value="{{ kod }}" {% if kod in request.args.getlist('musteri_kodu') %}selected{% endif %}>{{ kod }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Mağaza İsmi</label>
-                    <input type="text" name="magaza_ismi" value="{{ request.args.get('magaza_ismi', '') }}" placeholder="İsim ara..." class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <select name="magaza_ismi" multiple placeholder="İsim seçin veya yazın..." class="filter-select">
+                        {% for isim in magaza_isimleri %}
+                        <option value="{{ isim }}" {% if isim in request.args.getlist('magaza_ismi') %}selected{% endif %}>{{ isim }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Cari</label>
-                    <input type="text" name="cari" value="{{ request.args.get('cari', '') }}" placeholder="Cari..." class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <select name="cari" multiple placeholder="Cari seçin veya yazın..." class="filter-select">
+                        {% for cari in caris %}
+                        <option value="{{ cari }}" {% if cari in request.args.getlist('cari') %}selected{% endif %}>{{ cari }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">İlçe</label>
-                    <input type="text" name="ilce" value="{{ request.args.get('ilce', '') }}" placeholder="İlçe..." class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <select name="ilce" multiple placeholder="İlçe seçin veya yazın..." class="filter-select">
+                        {% for ilce in ilces %}
+                        <option value="{{ ilce }}" {% if ilce in request.args.getlist('ilce') %}selected{% endif %}>{{ ilce }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Şehir (İl)</label>
-                    <select name="il" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                        <option value="">Tümü</option>
-                        {% for item in cities %}{% if item[0] %}
-                        <option value="{{ item[0] }}" {% if request.args.get('il') == item[0] %}selected{% endif %}>{{ item[0] }}</option>
-                        {% endif %}{% endfor %}
+                    <select name="il" multiple placeholder="Şehir seçin veya yazın..." class="filter-select">
+                        {% for city in cities %}
+                        <option value="{{ city }}" {% if city in request.args.getlist('il') %}selected{% endif %}>{{ city }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Bölge</label>
-                    <select name="bolge" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                        <option value="">Tümü</option>
-                        {% for item in regions %}{% if item[0] %}
-                        <option value="{{ item[0] }}" {% if request.args.get('bolge') == item[0] %}selected{% endif %}>{{ item[0] }}</option>
-                        {% endif %}{% endfor %}
+                    <select name="bolge" multiple placeholder="Bölge seçin veya yazın..." class="filter-select">
+                        {% for region in regions %}
+                        <option value="{{ region }}" {% if region in request.args.getlist('bolge') %}selected{% endif %}>{{ region }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Kategori</label>
-                    <select name="kategori" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                        <option value="">Tümü</option>
-                        {% for item in categories %}{% if item[0] %}
-                        <option value="{{ item[0] }}" {% if request.args.get('kategori') == item[0] %}selected{% endif %}>{{ item[0] }}</option>
-                        {% endif %}{% endfor %}
+                    <select name="kategori" multiple placeholder="Kategori seçin veya yazın..." class="filter-select">
+                        {% for category in categories %}
+                        <option value="{{ category }}" {% if category in request.args.getlist('kategori') %}selected{% endif %}>{{ category }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Mağaza Sınıfı</label>
-                    <select name="sinif" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
-                        <option value="">Tümü</option>
-                        {% for item in classes %}{% if item[0] %}
-                        <option value="{{ item[0] }}" {% if request.args.get('sinif') == item[0] %}selected{% endif %}>{{ item[0] }}</option>
-                        {% endif %}{% endfor %}
+                    <select name="sinif" multiple placeholder="Sınıf seçin veya yazın..." class="filter-select">
+                        {% for cls in classes %}
+                        <option value="{{ cls }}" {% if cls in request.args.getlist('sinif') %}selected{% endif %}>{{ cls }}</option>
+                        {% endfor %}
                     </select>
                 </div>
             </div>
@@ -136,48 +148,140 @@
         </form>
     </div>
 
+    <!-- Sütun Kontrolü Butonu -->
+    <div class="mb-4 flex justify-end">
+        <button onclick="toggleColumnModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+            Sütunlar
+        </button>
+    </div>
+
     <div class="overflow-x-auto">
-        <table class="w-full text-sm text-left text-slate-600">
+        <table id="storesTable" class="w-full text-sm text-left text-slate-600">
             <thead class="text-xs text-slate-500 font-bold uppercase bg-slate-50 border-b border-slate-200 tracking-wider">
-                <tr>
-                    <th class="px-6 py-4">Müşteri Kodu</th>
-                    <th class="px-6 py-4">Mağaza İsmi</th>
-                    <th class="px-6 py-4">Sınıf & Kategori</th>
-                    <th class="px-6 py-4">Bölge & Şehir</th>
-                    <th class="px-6 py-4">Cari</th>
-                    <th class="px-6 py-4 text-right">İşlemler</th>
+                <tr id="tableHeader">
+                    <th data-column="musteri_kodu" class="px-6 py-4 cursor-move draggable-column">
+                        <div class="flex items-center gap-2">
+                            <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                            </svg>
+                            Müşteri Kodu
+                        </div>
+                    </th>
+                    <th data-column="magaza_ismi" class="px-6 py-4 cursor-move draggable-column">
+                        <div class="flex items-center gap-2">
+                            <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                            </svg>
+                            Mağaza İsmi
+                        </div>
+                    </th>
+                    <th data-column="magaza_sinifi" class="px-6 py-4 cursor-move draggable-column">
+                        <div class="flex items-center gap-2">
+                            <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                            </svg>
+                            Mağaza Sınıfı
+                        </div>
+                    </th>
+                    <th data-column="magaza_kategorisi" class="px-6 py-4 cursor-move draggable-column">
+                        <div class="flex items-center gap-2">
+                            <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                            </svg>
+                            Kategori
+                        </div>
+                    </th>
+                    <th data-column="bolge" class="px-6 py-4 cursor-move draggable-column">
+                        <div class="flex items-center gap-2">
+                            <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                            </svg>
+                            Bölge
+                        </div>
+                    </th>
+                    <th data-column="il" class="px-6 py-4 cursor-move draggable-column">
+                        <div class="flex items-center gap-2">
+                            <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                            </svg>
+                            Şehir (İl)
+                        </div>
+                    </th>
+                    <th data-column="ilce" class="px-6 py-4 cursor-move draggable-column">
+                        <div class="flex items-center gap-2">
+                            <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                            </svg>
+                            İlçe
+                        </div>
+                    </th>
+                    <th data-column="cari" class="px-6 py-4 cursor-move draggable-column">
+                        <div class="flex items-center gap-2">
+                            <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                            </svg>
+                            Cari
+                        </div>
+                    </th>
+                    <th data-column="adres" class="px-6 py-4 cursor-move draggable-column">
+                        <div class="flex items-center gap-2">
+                            <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                            </svg>
+                            Adres
+                        </div>
+                    </th>
+                    <th data-column="enlem" class="px-6 py-4 cursor-move draggable-column">
+                        <div class="flex items-center gap-2">
+                            <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                            </svg>
+                            Enlem
+                        </div>
+                    </th>
+                    <th data-column="boylam" class="px-6 py-4 cursor-move draggable-column">
+                        <div class="flex items-center gap-2">
+                            <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+                            </svg>
+                            Boylam
+                        </div>
+                    </th>
+                    <th data-column="islemler" class="px-6 py-4 text-right">
+                        İşlemler
+                    </th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
                 {% for store in stores %}
                 <tr class="bg-white hover:bg-indigo-50/50 transition-colors">
-                    <td class="px-6 py-4 font-medium text-slate-900">
-                        <div class="flex items-center gap-2">
-                            <span class="font-mono text-xs bg-slate-100 px-2 py-1 rounded">{{ store.musteri_kodu }}</span>
-                        </div>
+                    <td data-column="musteri_kodu" class="px-6 py-4 font-medium text-slate-900">
+                        <span class="font-mono text-xs bg-slate-100 px-2 py-1 rounded">{{ store.musteri_kodu }}</span>
                     </td>
-                    <td class="px-6 py-4">
+                    <td data-column="magaza_ismi" class="px-6 py-4">
                         <div class="text-sm font-bold text-slate-900">{{ store.magaza_ismi }}</div>
-                        <div class="text-xs text-slate-500 mt-0.5">{{ store.adres|truncate(40) }}</div>
                     </td>
-                    <td class="px-6 py-4">
-                        <div class="flex flex-col gap-1">
-                            <span class="inline-flex w-fit items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                                {{ store.magaza_sinifi }}
-                            </span>
-                            <span class="inline-flex w-fit items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
-                                {{ store.magaza_kategorisi }}
-                            </span>
-                        </div>
+                    <td data-column="magaza_sinifi" class="px-6 py-4">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                            {{ store.magaza_sinifi }}
+                        </span>
                     </td>
-                    <td class="px-6 py-4">
-                        <div class="flex flex-col">
-                            <span class="font-bold text-slate-700">{{ store.bolge }}</span>
-                            <span class="text-xs text-slate-500">{{ store.il }} / {{ store.ilce }}</span>
-                        </div>
+                    <td data-column="magaza_kategorisi" class="px-6 py-4">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
+                            {{ store.magaza_kategorisi }}
+                        </span>
                     </td>
-                    <td class="px-6 py-4 font-mono text-slate-700">{{ store.cari }}</td>
-                    <td class="px-6 py-4 text-right">
+                    <td data-column="bolge" class="px-6 py-4 font-bold text-slate-700">{{ store.bolge }}</td>
+                    <td data-column="il" class="px-6 py-4 text-slate-700">{{ store.il }}</td>
+                    <td data-column="ilce" class="px-6 py-4 text-slate-700">{{ store.ilce }}</td>
+                    <td data-column="cari" class="px-6 py-4 font-mono text-slate-700">{{ store.cari }}</td>
+                    <td data-column="adres" class="px-6 py-4 text-xs text-slate-500">{{ store.adres|truncate(40) }}</td>
+                    <td data-column="enlem" class="px-6 py-4 font-mono text-xs text-slate-500">{{ store.enlem or '-' }}</td>
+                    <td data-column="boylam" class="px-6 py-4 font-mono text-xs text-slate-500">{{ store.boylam or '-' }}</td>
+                    <td data-column="islemler" class="px-6 py-4 text-right">
                          {% if current_user.is_admin or current_user.can_edit %}
                         <button class="text-indigo-600 hover:text-indigo-900 font-bold text-xs uppercase tracking-wide">
                             Düzenle
@@ -187,7 +291,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" class="px-6 py-12 text-center">
+                    <td colspan="12" class="px-6 py-12 text-center">
                         <div class="flex flex-col items-center justify-center">
                             <p class="text-lg font-medium text-slate-500">Kayıt Bulunamadı</p>
                             <p class="text-sm text-slate-400 mt-1">Filtre kriterlerinizi kontrol ediniz.</p>
@@ -202,4 +306,278 @@
         <span>Toplam {{ stores|length }} kayıt listeleniyor.</span>
     </div>
 </div>
+
+<!-- Sütun Kontrolü Modal -->
+<div id="columnModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+        <div class="p-6 border-b border-slate-200">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-bold text-slate-900">Sütun Görünürlüğü ve Sıralama</h3>
+                <button onclick="toggleColumnModal()" class="text-slate-400 hover:text-slate-600">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="p-6">
+            <p class="text-sm text-slate-500 mb-4">Görünmesini istediğiniz sütunları seçin ve sıralamak için sürükleyin:</p>
+            <ul id="columnList" class="space-y-2">
+                <!-- JavaScript ile doldurulacak -->
+            </ul>
+            <div class="mt-6 flex justify-end gap-3">
+                <button onclick="resetColumns()" class="px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium">
+                    Varsayılan
+                </button>
+                <button onclick="applyColumnSettings()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700">
+                    Uygula
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .ts-wrapper.multi .ts-control {
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.5rem;
+        min-height: 2.5rem;
+    }
+    .ts-wrapper.multi .ts-control.has-items {
+        padding: 0.25rem 0.75rem;
+    }
+    .ts-wrapper .ts-control input {
+        font-size: 0.875rem;
+    }
+    .ts-dropdown {
+        border: 1px solid #cbd5e1;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .ts-dropdown .option {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    .ts-dropdown .option.active {
+        background-color: #eef2ff;
+        color: #4338ca;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script>
+// Sütun tanımlamaları
+const columnDefinitions = {
+    'musteri_kodu': { label: 'Müşteri Kodu', visible: true },
+    'magaza_ismi': { label: 'Mağaza İsmi', visible: true },
+    'magaza_sinifi': { label: 'Mağaza Sınıfı', visible: true },
+    'magaza_kategorisi': { label: 'Kategori', visible: true },
+    'bolge': { label: 'Bölge', visible: true },
+    'il': { label: 'Şehir (İl)', visible: true },
+    'ilce': { label: 'İlçe', visible: true },
+    'cari': { label: 'Cari', visible: true },
+    'adres': { label: 'Adres', visible: false },
+    'enlem': { label: 'Enlem', visible: false },
+    'boylam': { label: 'Boylam', visible: false },
+    'islemler': { label: 'İşlemler', visible: true, fixed: true }
+};
+
+// LocalStorage'dan sütun ayarlarını yükle
+function loadColumnSettings() {
+    const saved = localStorage.getItem('columnSettings');
+    if (saved) {
+        const settings = JSON.parse(saved);
+        Object.keys(columnDefinitions).forEach(key => {
+            if (settings[key] !== undefined) {
+                columnDefinitions[key].visible = settings[key].visible;
+            }
+        });
+        if (settings.order) {
+            return settings.order;
+        }
+    }
+    return Object.keys(columnDefinitions);
+}
+
+// Sütun ayarlarını kaydet
+function saveColumnSettings(order) {
+    const settings = {
+        order: order,
+    };
+    Object.keys(columnDefinitions).forEach(key => {
+        settings[key] = { visible: columnDefinitions[key].visible };
+    });
+    localStorage.setItem('columnSettings', JSON.stringify(settings));
+}
+
+// Sütunları uygula
+function applyColumnVisibility(order) {
+    const headerRow = document.getElementById('tableHeader');
+    const bodyRows = document.querySelectorAll('#storesTable tbody tr');
+    
+    // Header'ı yeniden sırala
+    const headerCells = Array.from(headerRow.querySelectorAll('th'));
+    const newHeaderOrder = [];
+    order.forEach(colKey => {
+        const cell = headerCells.find(c => c.getAttribute('data-column') === colKey);
+        if (cell) newHeaderOrder.push(cell);
+    });
+    newHeaderOrder.forEach(cell => headerRow.appendChild(cell));
+    
+    // Body hücrelerini yeniden sırala
+    bodyRows.forEach(row => {
+        const cells = Array.from(row.querySelectorAll('td'));
+        const newCellOrder = [];
+        order.forEach(colKey => {
+            const cell = cells.find(c => c.getAttribute('data-column') === colKey);
+            if (cell) newCellOrder.push(cell);
+        });
+        newCellOrder.forEach(cell => row.appendChild(cell));
+    });
+    
+    // Görünürlüğü uygula
+    order.forEach(colKey => {
+        const visible = columnDefinitions[colKey].visible;
+        const selector = `[data-column="${colKey}"]`;
+        document.querySelectorAll(selector).forEach(el => {
+            el.style.display = visible ? '' : 'none';
+        });
+    });
+}
+
+// Modal'ı aç/kapat
+function toggleColumnModal() {
+    const modal = document.getElementById('columnModal');
+    modal.classList.toggle('hidden');
+    if (!modal.classList.contains('hidden')) {
+        renderColumnList();
+    }
+}
+
+// Sütun listesini render et
+function renderColumnList() {
+    const list = document.getElementById('columnList');
+    const order = loadColumnSettings();
+    list.innerHTML = '';
+    
+    order.forEach(colKey => {
+        if (columnDefinitions[colKey].fixed) return; // İşlemler sütunu sabit
+        
+        const col = columnDefinitions[colKey];
+        const li = document.createElement('li');
+        li.className = 'flex items-center gap-3 p-3 bg-slate-50 rounded-lg cursor-move';
+        li.setAttribute('data-column', colKey);
+        li.innerHTML = `
+            <svg class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" />
+            </svg>
+            <input type="checkbox" ${col.visible ? 'checked' : ''} 
+                   onchange="columnDefinitions['${colKey}'].visible = this.checked"
+                   class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+            <span class="flex-1 text-sm font-medium text-slate-700">${col.label}</span>
+        `;
+        list.appendChild(li);
+    });
+    
+    // Sortable'ı başlat
+    new Sortable(list, {
+        animation: 150,
+        handle: 'li',
+        onEnd: function(evt) {
+            // Sıralama değişti
+        }
+    });
+}
+
+// Sütun ayarlarını uygula
+function applyColumnSettings() {
+    const list = document.getElementById('columnList');
+    const order = Array.from(list.children).map(li => li.getAttribute('data-column'));
+    // İşlemler sütununu sona ekle
+    order.push('islemler');
+    
+    applyColumnVisibility(order);
+    saveColumnSettings(order);
+    toggleColumnModal();
+}
+
+// Varsayılan ayarlara dön
+function resetColumns() {
+    Object.keys(columnDefinitions).forEach(key => {
+        columnDefinitions[key].visible = key !== 'adres' && key !== 'enlem' && key !== 'boylam';
+    });
+    const defaultOrder = Object.keys(columnDefinitions);
+    applyColumnVisibility(defaultOrder);
+    saveColumnSettings(defaultOrder);
+    renderColumnList();
+}
+
+// Sayfa yüklendiğinde
+document.addEventListener('DOMContentLoaded', function() {
+    // Tom Select filtreleri
+    const selects = document.querySelectorAll('.filter-select');
+    selects.forEach(function(select) {
+        new TomSelect(select, {
+            plugins: ['remove_button'],
+            maxItems: null,
+            placeholder: select.getAttribute('placeholder') || 'Seçin veya yazın...',
+            create: true,
+            createOnBlur: true,
+            persist: false,
+            allowEmptyOption: false,
+            closeAfterSelect: false,
+            render: {
+                no_results: function(data, escape) {
+                    return '<div class="no-results">Sonuç bulunamadı</div>';
+                }
+            }
+        });
+    });
+    
+    // Sütun ayarlarını yükle ve uygula
+    const order = loadColumnSettings();
+    applyColumnVisibility(order);
+    
+    // Tablo header'ı için drag & drop
+    const headerRow = document.getElementById('tableHeader');
+    new Sortable(headerRow, {
+        animation: 150,
+        handle: '.draggable-column',
+        onEnd: function(evt) {
+            const order = Array.from(headerRow.querySelectorAll('th[data-column]'))
+                .map(th => th.getAttribute('data-column'));
+            const bodyRows = document.querySelectorAll('#storesTable tbody tr');
+            
+            bodyRows.forEach(row => {
+                const cells = Array.from(row.querySelectorAll('td[data-column]'));
+                const newOrder = [];
+                order.forEach(colKey => {
+                    const cell = cells.find(c => c.getAttribute('data-column') === colKey);
+                    if (cell) newOrder.push(cell);
+                });
+                newOrder.forEach(cell => row.appendChild(cell));
+            });
+            
+            saveColumnSettings(order);
+        }
+    });
+});
+
+// Excel export fonksiyonu
+function exportExcel() {
+    const order = loadColumnSettings();
+    // Sadece görünür sütunları al
+    const visibleColumns = order.filter(col => {
+        return columnDefinitions[col] && columnDefinitions[col].visible && col !== 'islemler';
+    });
+    
+    // Mevcut URL parametrelerini al
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('columns', visibleColumns.join(','));
+    
+    // Export URL'sine yönlendir
+    window.location.href = '{{ url_for("export_data") }}?' + urlParams.toString();
+}
+</script>
 {% endblock %}

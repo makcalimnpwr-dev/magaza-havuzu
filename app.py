@@ -26,33 +26,33 @@ def load_user(user_id):
 
 # --- YARDIMCI FONKSİYON: FİLTRELEME SORGUSU OLUŞTURUCU ---
 def apply_filters(query):
-    # Formdan gelen verileri al
-    f_kod = request.args.get('musteri_kodu')
-    f_isim = request.args.get('magaza_ismi')
-    f_cari = request.args.get('cari')
-    f_ilce = request.args.get('ilce')
-    f_il = request.args.get('il')
-    f_bolge = request.args.get('bolge')
-    f_kategori = request.args.get('kategori')
-    f_sinif = request.args.get('sinif')
+    # Formdan gelen verileri al (çoklu seçim desteği ile)
+    f_kod_list = request.args.getlist('musteri_kodu')
+    f_isim_list = request.args.getlist('magaza_ismi')
+    f_cari_list = request.args.getlist('cari')
+    f_ilce_list = request.args.getlist('ilce')
+    f_il_list = request.args.getlist('il')
+    f_bolge_list = request.args.getlist('bolge')
+    f_kategori_list = request.args.getlist('kategori')
+    f_sinif_list = request.args.getlist('sinif')
 
-    # Filtreleri uygula (ilike: büyük/küçük harf duyarsız içerir araması)
-    if f_kod:
-        query = query.filter(Store.musteri_kodu.ilike(f"%{f_kod}%"))
-    if f_isim:
-        query = query.filter(Store.magaza_ismi.ilike(f"%{f_isim}%"))
-    if f_cari:
-        query = query.filter(Store.cari.ilike(f"%{f_cari}%"))
-    if f_ilce:
-        query = query.filter(Store.ilce.ilike(f"%{f_ilce}%"))
-    if f_il:
-        query = query.filter(Store.il == f_il)
-    if f_bolge:
-        query = query.filter(Store.bolge == f_bolge)
-    if f_kategori:
-        query = query.filter(Store.magaza_kategorisi == f_kategori)
-    if f_sinif:
-        query = query.filter(Store.magaza_sinifi == f_sinif)
+    # Filtreleri uygula (çoklu seçim desteği ile)
+    if f_kod_list:
+        query = query.filter(or_(*[Store.musteri_kodu.ilike(f"%{k}%") for k in f_kod_list if k]))
+    if f_isim_list:
+        query = query.filter(or_(*[Store.magaza_ismi.ilike(f"%{i}%") for i in f_isim_list if i]))
+    if f_cari_list:
+        query = query.filter(or_(*[Store.cari.ilike(f"%{c}%") for c in f_cari_list if c]))
+    if f_ilce_list:
+        query = query.filter(or_(*[Store.ilce.ilike(f"%{ilce}%") for ilce in f_ilce_list if ilce]))
+    if f_il_list:
+        query = query.filter(Store.il.in_([il for il in f_il_list if il]))
+    if f_bolge_list:
+        query = query.filter(Store.bolge.in_([b for b in f_bolge_list if b]))
+    if f_kategori_list:
+        query = query.filter(Store.magaza_kategorisi.in_([k for k in f_kategori_list if k]))
+    if f_sinif_list:
+        query = query.filter(Store.magaza_sinifi.in_([s for s in f_sinif_list if s]))
         
     return query
 
@@ -95,13 +95,26 @@ def dashboard():
     query = apply_filters(query) # Filtreleri uygula
     stores = query.all()
     
-    # Dropdownlar için benzersiz verileri çek (Alfabetik sırayla)
-    cities = db.session.query(Store.il).distinct().order_by(Store.il).all()
-    regions = db.session.query(Store.bolge).distinct().order_by(Store.bolge).all()
-    categories = db.session.query(Store.magaza_kategorisi).distinct().order_by(Store.magaza_kategorisi).all()
-    classes = db.session.query(Store.magaza_sinifi).distinct().order_by(Store.magaza_sinifi).all()
+    # Dropdownlar için benzersiz verileri çek (Alfabetik sırayla, None değerleri filtrele)
+    cities = [c[0] for c in db.session.query(Store.il).distinct().order_by(Store.il).all() if c[0]]
+    regions = [r[0] for r in db.session.query(Store.bolge).distinct().order_by(Store.bolge).all() if r[0]]
+    categories = [cat[0] for cat in db.session.query(Store.magaza_kategorisi).distinct().order_by(Store.magaza_kategorisi).all() if cat[0]]
+    classes = [cls[0] for cls in db.session.query(Store.magaza_sinifi).distinct().order_by(Store.magaza_sinifi).all() if cls[0]]
+    caris = [c[0] for c in db.session.query(Store.cari).distinct().order_by(Store.cari).all() if c[0]]
+    ilces = [i[0] for i in db.session.query(Store.ilce).distinct().order_by(Store.ilce).all() if i[0]]
+    musteri_kodlari = [m[0] for m in db.session.query(Store.musteri_kodu).distinct().order_by(Store.musteri_kodu).all() if m[0]]
+    magaza_isimleri = [m[0] for m in db.session.query(Store.magaza_ismi).distinct().order_by(Store.magaza_ismi).all() if m[0]]
 
-    return render_template('dashboard.html', stores=stores, cities=cities, regions=regions, categories=categories, classes=classes)
+    return render_template('dashboard.html', 
+                         stores=stores, 
+                         cities=cities, 
+                         regions=regions, 
+                         categories=categories, 
+                         classes=classes,
+                         caris=caris,
+                         ilces=ilces,
+                         musteri_kodlari=musteri_kodlari,
+                         magaza_isimleri=magaza_isimleri)
 
 @app.route('/upload', methods=['POST'])
 @login_required
@@ -155,14 +168,60 @@ def export_data():
     query = apply_filters(query) # Aynı filtreleri dışa aktarmada da kullan
     stores = query.all()
     
+    # Sütun sıralaması ve görünürlüğü (frontend'den gelecek veya varsayılan)
+    column_order = request.args.get('columns', '').split(',') if request.args.get('columns') else []
+    
+    # Sütun eşleştirmesi
+    column_mapping = {
+        'musteri_kodu': 'Müşteri Kodu',
+        'magaza_ismi': 'Mağaza İsmi',
+        'magaza_kategorisi': 'Mağaza Kategorisi',
+        'magaza_sinifi': 'Mağaza Sınıfı',
+        'bolge': 'Bölge',
+        'il': 'İl',
+        'ilce': 'İlçe',
+        'cari': 'Cari',
+        'adres': 'Adres',
+        'enlem': 'Enlem',
+        'boylam': 'Boylam'
+    }
+    
+    # Varsayılan sıralama (tüm sütunlar)
+    if not column_order or column_order == ['']:
+        column_order = ['musteri_kodu', 'magaza_ismi', 'magaza_sinifi', 'magaza_kategorisi', 
+                       'bolge', 'il', 'ilce', 'cari', 'adres', 'enlem', 'boylam']
+    
+    # Sadece geçerli sütunları filtrele
+    valid_columns = [col for col in column_order if col in column_mapping]
+    
     data = []
     for s in stores:
-        data.append({
-            "Müşteri Kodu": s.musteri_kodu, "Mağaza İsmi": s.magaza_ismi,
-            "Mağaza Kategorisi": s.magaza_kategorisi, "Mağaza Sınıfı": s.magaza_sinifi,
-            "Cari": s.cari, "İl": s.il, "İlçe": s.ilce, "Bölge": s.bolge,
-            "Enlem": s.enlem, "Boylam": s.boylam, "Adres": s.adres
-        })
+        row = {}
+        for col_key in valid_columns:
+            col_name = column_mapping[col_key]
+            if col_key == 'musteri_kodu':
+                row[col_name] = s.musteri_kodu
+            elif col_key == 'magaza_ismi':
+                row[col_name] = s.magaza_ismi
+            elif col_key == 'magaza_kategorisi':
+                row[col_name] = s.magaza_kategorisi
+            elif col_key == 'magaza_sinifi':
+                row[col_name] = s.magaza_sinifi
+            elif col_key == 'bolge':
+                row[col_name] = s.bolge
+            elif col_key == 'il':
+                row[col_name] = s.il
+            elif col_key == 'ilce':
+                row[col_name] = s.ilce
+            elif col_key == 'cari':
+                row[col_name] = s.cari
+            elif col_key == 'adres':
+                row[col_name] = s.adres
+            elif col_key == 'enlem':
+                row[col_name] = s.enlem
+            elif col_key == 'boylam':
+                row[col_name] = s.boylam
+        data.append(row)
         
     df = pd.DataFrame(data)
     output = BytesIO()

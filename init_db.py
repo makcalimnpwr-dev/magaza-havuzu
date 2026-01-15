@@ -25,3 +25,4 @@ with app.app_context():
     else:
         print("Admin kullanıcısı zaten mevcut.")
 
+
